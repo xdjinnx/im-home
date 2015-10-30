@@ -11,20 +11,26 @@ class Responder(threading.Thread):
     # @param data Udp package data received from socket.
     # @param addr Ip that should be used as respond ip.
     # @param port Respond port.
+    # @param secret Secret that should be in message if responder should listen.
     #
-    def __init__(self, data, addr, port):
+    def __init__(self, data, addr, port, secret):
         self.data = data
         self.addr = addr[0]
         self.port = port
+        self.secret = secret
         threading.Thread.__init__(self)
         self.start()
 
     ##
     # Thread function that repondes and reads package.
     #
-    # TODO: Decrypt package, listen for secret
+    # TODO: Decrypt package
     #
     def run(self):
+        if self.hasSecret():
+            if not self.checkSecret(self.data):
+                return
+
         if self.isSubscription(self.data):
             subscription_handler.add(self.getSubIP(self.data), self.addr, self.port)
             self.send(self.getSubIP(self.data), 'subbed')
@@ -37,9 +43,7 @@ class Responder(threading.Thread):
     # @param data Socket package data.
     #
     def isSubscription(self, data):
-        if data.split('#')[0] == 'sub':
-            return True
-        return False
+        return data.split('#')[0] == 'sub'
 
     ##
     # Sending package as reponse.
@@ -59,3 +63,20 @@ class Responder(threading.Thread):
     #
     def getSubIP(self, data):
         return data.split('#')[1]
+
+    ##
+    # Check if secret in object is same as in string param
+    #
+    # @param data Socket package data.
+    #
+    def checkSecret(self, data):
+        data = data.split('#')
+        if len(data) > 2:
+            return self.secret == data[2]
+        return False
+
+    ##
+    # Check if object has secret
+    #
+    def hasSecret(self):
+        return self.secret != ''

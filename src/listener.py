@@ -11,11 +11,13 @@ class Listener(threading.Thread):
     # @param ip Specifide ip as string that should be related to the application.
     # @param port listening port as string.
     # @param sendingPort port that application uses to send packages as string.
+    # @param secret Secret that should be in message if responder should listen.
     #
-    def __init__(self, ip, port, sendingPort):
+    def __init__(self, ip, port, sendingPort, secret):
         self.ip = ip
         self.port = int(port)
         self.sendingPort = int(sendingPort)
+        self.secret = secret
         threading.Thread.__init__(self)
         self.start()
         self.join()
@@ -28,4 +30,4 @@ class Listener(threading.Thread):
         sock.bind((self.ip, self.port))
         while True:
             data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-            Responder(data, addr, self.sendingPort)
+            Responder(data, addr, self.sendingPort, self.secret)
